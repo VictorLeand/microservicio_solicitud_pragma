@@ -12,7 +12,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI(){
         return new OpenAPI()
                 .info(new Info()
-                        .title("API de Clean Arquitecture")
+                        .title("API de Clean Arquitecture Microservicio Solicitudes")
                         .version("version 1.0")
                         .description("Documentación de API REST"));
     }

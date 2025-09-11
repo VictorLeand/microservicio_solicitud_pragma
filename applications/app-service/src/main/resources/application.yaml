@@ -20,12 +20,25 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
+
+  security:
+    jwt:
+      secret: change-me-change-me-change-me-32-bytes! # usa la misma en todos los microservicios
+      expiration-ms: 3600000
+
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
 routes:
   paths:
-    path: "/api/v1/solicitud"
-
+    solicitud:
+      path: "/api/v1/solicitud"
+    tipo:
+      path: "/api/v1/tipo"
+    estado:
+      path: "/api/v1/estado"
 adapters:
   r2dbc:
     host: "localhost"
@@ -34,3 +47,39 @@ adapters:
     schema: ""
     username: "postgres"
     password: "1234"
+adapter:
+  clients:
+    usuarios:
+      base-url: "http://localhost:8081"
+  restconsumer:
+    timeout: 5000
+    url: "http://localhost:8081"
+    uri:
+      validaruser: "/api/v1/validaruser"
+
+  userpaginable:
+    timeout: 5000
+    url: "http://localhost:8081"
+    uri:
+      paginable: "/api/v1/solicitud"
+resilience4j:
+  circuitbreaker:
+    instances:
+      testGet:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+      testPost:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"

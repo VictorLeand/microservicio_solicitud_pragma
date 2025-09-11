@@ -1,9 +1,9 @@
 package co.com.pragma.api.dto;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,8 +23,19 @@ public class SolicitudDto {
     @NotNull(message = "El monto es obligatorio")
     private BigDecimal monto;
 
-    @Schema(description = "Plazo del usuario", example = "12", required = true)
-    @DecimalMin(value = "0", inclusive = false, message = "El plazo debe ser mayor a 0")
+    private String document;
+
+    @Schema(description = "Número de cuotas", example = "12", required = true)
+    @Min(value = 1, message = "Debe haber al menos una cuota")
     @NotNull(message = "El plazo es obligatorio")
-    private Long plazo;
+    private Integer plazo;
+
+    @Schema(description = "Correo electrónico del solicitante", example = "user@email.com", required = true)
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "El correo electrónico debe tener un formato válido")
+    private String email;
+
+    @Schema(description = "ID del tipo de préstamo", example = "2", required = true)
+    @NotNull(message = "El tipo de préstamo es obligatorio")
+    private Long idTipoPrestamo;
 }

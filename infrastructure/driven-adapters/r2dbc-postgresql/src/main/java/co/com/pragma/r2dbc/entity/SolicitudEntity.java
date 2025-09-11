@@ -1,14 +1,14 @@
 package co.com.pragma.r2dbc.entity;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+import co.com.pragma.model.estadoprestamo.EstadoPrestamo;
+import co.com.pragma.model.tipoprestamo.TipoPrestamo;
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Table("solicitudes")
 @AllArgsConstructor
@@ -19,13 +19,24 @@ import java.time.LocalDate;
 public class SolicitudEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column("id_solicitud")
     private Long id;
 
     private BigDecimal monto;
+    private Integer plazo;
+    private String email;
 
-    private Long plazo;
+    @Column("id_estado")
+    private Long idEstado;
 
+    @Column("id_tipo_prestamo")
+    private Long idTipoPrestamo;
+
+
+    @Transient
+    private TipoPrestamo tipoPrestamo;
+
+    @Transient
+    private EstadoPrestamo estadoPrestamo;
 
 }

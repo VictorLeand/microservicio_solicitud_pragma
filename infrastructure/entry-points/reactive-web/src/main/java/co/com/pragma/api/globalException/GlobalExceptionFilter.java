@@ -1,7 +1,7 @@
 package co.com.pragma.api.globalException;
 
-import co.com.pragma.model.user.exception.BusinessException;
-import co.com.pragma.model.user.exception.ExceptionResponse;
+import co.com.pragma.model.exception.BusinessException;
+import co.com.pragma.model.exception.ExceptionResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
