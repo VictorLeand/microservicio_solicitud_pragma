@@ -5,6 +5,7 @@ import co.com.pragma.api.dto.SolicitudResponseDto;
 import co.com.pragma.api.path.SolicitudPath;
 import co.com.pragma.api.dto.SolicitudDto;
 import co.com.pragma.api.globalException.GlobalExceptionFilter;
+import co.com.pragma.model.login.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -22,8 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -142,7 +142,7 @@ public class SolicitudRouterRest {
                                             description = "Página de solicitudes pendientes",
                                             // Si usas un PageResponse<AdminDto>, especifica ese wrapper;
                                             // si no tienes DTO de página, al menos documenta la estructura:
-                                            content = @Content(schema = @Schema(implementation = co.com.pragma.model.PageResponse.class))
+                                            content = @Content(schema = @Schema(implementation = PageResponse.class))
                                     ),
                                     @ApiResponse(
                                             responseCode = "401",
@@ -161,6 +161,24 @@ public class SolicitudRouterRest {
                                     )
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/solicitud/{id}/estado",
+                    method = RequestMethod.PUT,
+                    beanClass = SolicitudHandler.class,
+                    beanMethod = "actualizarEstado",
+                    operation = @Operation(
+                            operationId = "aprobarRechazarSolicitud",
+                            summary = "Cambiar estado de solicitud a ACEPTADA o RECHAZADA (solo ASESOR)",
+                            requestBody = @RequestBody(required = true,
+                                    content = @Content(schema = @Schema(implementation = co.com.pragma.api.dto.CambioEstadoDto.class))),
+                            responses = {
+                                    @ApiResponse(responseCode = "200", description = "Estado actualizado"),
+                                    @ApiResponse(responseCode = "400", description = "Error de negocio/validación"),
+                                    @ApiResponse(responseCode = "403", description = "Prohibido"),
+                                    @ApiResponse(responseCode = "404", description = "No encontrado")
+                            }
+                    )
             )
     })
     @Bean
@@ -168,6 +186,7 @@ public class SolicitudRouterRest {
         return route(POST(solicitudPath.getPath()), handler::crear)
                 .andRoute(GET(solicitudPath.getPath()), handler::getSolicitudAndUser)
                 .andRoute(GET("/api/v1/solicitud/admin"), handler::listarPendientes)
+                .andRoute(PUT("/api/v1/solicitud/{id}/estado"), handler::actualizarEstado)
                 .filter(filter);
     }
 }

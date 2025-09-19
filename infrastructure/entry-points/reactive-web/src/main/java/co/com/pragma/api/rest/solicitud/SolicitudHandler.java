@@ -1,5 +1,6 @@
 package co.com.pragma.api.rest.solicitud;
 
+import co.com.pragma.api.dto.CambioEstadoDto;
 import co.com.pragma.api.dto.SolicitudDto;
 import co.com.pragma.api.mapper.SolicitudMapper;
 import co.com.pragma.api.restclient.UsuariosClient;
@@ -96,6 +97,19 @@ public class SolicitudHandler {
                 .flatMap(p -> ServerResponse.ok()
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .bodyValue(p));
+    }
+
+    public Mono<ServerResponse> actualizarEstado(ServerRequest req) {
+        Long id = Long.valueOf(req.pathVariable("id"));
+        return req.bodyToMono(CambioEstadoDto.class)
+                .map(requestValidator::validate)
+                .flatMap(dto -> solicitudUseCase.ejecutar(id, dto.getEstado()))
+                .flatMap(sol -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(mapper.toResponse(sol)))
+                .onErrorResume(BusinessException.class, e ->
+                        ServerResponse.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+                                .bodyValue(java.util.Map.of("error", e.getMessage())));
     }
 
     private static int parseInt(String s, int def) {

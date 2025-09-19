@@ -1,5 +1,6 @@
 server:
   port: 8080
+
 spring:
   application:
     name: "Solicitudes"
@@ -11,6 +12,7 @@ spring:
       path: "/h2"
   profiles:
     include: null
+
 management:
   endpoints:
     web:
@@ -24,13 +26,14 @@ management:
     circuitbreakers:
       enabled: true
 
-  security:
-    jwt:
-      secret: change-me-change-me-change-me-32-bytes! # usa la misma en todos los microservicios
-      expiration-ms: 3600000
+security:
+  jwt:
+    secret: ${SECURITY_JWT_SECRET:${JWT_SECRET:change-me-change-me-change-me-32-bytes!}}
+    expiration-ms: 3600000
 
 cors:
-  allowed-origins: "http://localhost:4200,http://localhost:8080"
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:8080}
+
 routes:
   paths:
     solicitud:
@@ -39,47 +42,27 @@ routes:
       path: "/api/v1/tipo"
     estado:
       path: "/api/v1/estado"
+
+# ---- BBDD (tu config adaptador R2DBC) ----
 adapters:
   r2dbc:
-    host: "localhost"
-    port: 5432
-    database: "solicitudes"
-    schema: ""
-    username: "postgres"
-    password: "1234"
+    host: ${DB_HOST:db-solicitudes}
+    port: ${DB_PORT:5432}
+    database: ${DB_NAME:solicitudes}
+    schema: ${DB_SCHEMA:public}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:1234}}
+
+# ---- WebClient (COINCIDE con RestConsumerConfig) ----
 adapter:
-  clients:
-    usuarios:
-      base-url: "http://localhost:8081"
-  restconsumer:
+  http:
     timeout: 5000
-    url: "http://localhost:8081"
+  # ambos WebClient usan la misma base URL, tomada de USUARIOS_URL o por defecto usuarios:8081
+  restconsumer:
+    url: ${USUARIOS_URL:http://usuarios:8081}
     uri:
       validaruser: "/api/v1/validaruser"
-
   userpaginable:
-    timeout: 5000
-    url: "http://localhost:8081"
+    url: ${USUARIOS_URL:http://usuarios:8081}
     uri:
       paginable: "/api/v1/solicitud"
-resilience4j:
-  circuitbreaker:
-    instances:
-      testGet:
-        registerHealthIndicator: true
-        failureRateThreshold: 50
-        slowCallRateThreshold: 50
-        slowCallDurationThreshold: "2s"
-        permittedNumberOfCallsInHalfOpenState: 3
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 10
-        waitDurationInOpenState: "10s"
-      testPost:
-        registerHealthIndicator: true
-        failureRateThreshold: 50
-        slowCallRateThreshold: 50
-        slowCallDurationThreshold: "2s"
-        permittedNumberOfCallsInHalfOpenState: 3
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 10
-        waitDurationInOpenState: "10s"

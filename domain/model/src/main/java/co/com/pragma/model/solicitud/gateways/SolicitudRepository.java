@@ -1,12 +1,13 @@
 package co.com.pragma.model.solicitud.gateways;
 
-import co.com.pragma.model.PageResponse;
+import co.com.pragma.model.login.PageResponse;
 import co.com.pragma.model.admin.Admin;
 import co.com.pragma.model.solicitud.AdminFilters;
 import co.com.pragma.model.solicitud.Solicitud;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface SolicitudRepository {
@@ -20,4 +21,10 @@ public interface SolicitudRepository {
     Flux<Admin> getAdminsByEstadoNombreIn(List<String> nombres);
 
     Mono<PageResponse<Admin>> pageAdminsByEstado(List<String> estados, int page, int size, String sort, AdminFilters filters);
+
+    Mono<Solicitud> findById(Long id);
+
+    Mono<Integer> updateEstadoById(Long idSolicitud, Long idEstado);
+
+    Mono<BigDecimal> deudaMensualAprobadas(String email);
 }

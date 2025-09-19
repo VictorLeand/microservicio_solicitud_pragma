@@ -1,6 +1,6 @@
 package co.com.pragma.r2dbc.reactive.solicitud;
 
-import co.com.pragma.model.PageResponse;
+import co.com.pragma.model.login.PageResponse;
 import co.com.pragma.model.admin.Admin;
 import co.com.pragma.model.solicitud.AdminFilters;
 import co.com.pragma.model.solicitud.Solicitud;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +38,9 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
 
 
     public SolicitudReactiveRepositoryAdapter(SolicitudReactiveRepository repository, ObjectMapper mapper,
-                                              TransactionalService transactionalService, SolicitudReactiveRepository repo, UserRepository userRepository, DatabaseClient db) {
+                                              TransactionalService transactionalService,
+                                              SolicitudReactiveRepository repo, UserRepository userRepository,
+                                              DatabaseClient db) {
         super(repository, mapper, entity -> mapper.map(entity, Solicitud.class));
         this.transactionalService = transactionalService;
         this.repo = repo;
@@ -257,6 +260,65 @@ public class SolicitudReactiveRepositoryAdapter extends ReactiveAdapterOperation
                             .hasNext(page + 1 < totalPages)
                             .build();
                 });
+    }
+
+    @Override
+    public Mono<Solicitud> findById(Long id) {
+        final String sql = """
+            SELECT s.id_solicitud, s.monto, s.plazo, s.email, s.id_estado, s.id_tipo_prestamo
+            FROM public.solicitudes s
+            WHERE s.id_solicitud = $1
+        """;
+        return db.sql(sql)
+                .bind(0, id)
+                .map((row, md) -> Solicitud.builder()
+                        .id(row.get("id_solicitud", Long.class))
+                        .monto(row.get("monto", java.math.BigDecimal.class))
+                        .plazo(row.get("plazo", Integer.class))
+                        .email(row.get("email", String.class))
+                        .idEstado(row.get("id_estado", Long.class))
+                        .idTipoPrestamo(row.get("id_tipo_prestamo", Long.class))
+                        .build()
+                )
+                .one();
+    }
+
+    @Override
+    public Mono<Integer> updateEstadoById(Long idSolicitud, Long idEstado) {
+        final String sql = """
+            UPDATE public.solicitudes
+            SET id_estado = $1
+            WHERE id_solicitud = $2
+        """;
+        return db.sql(sql)
+                .bind(0, idEstado)
+                .bind(1, idSolicitud)
+                .fetch()
+                .rowsUpdated()
+                .map(Long::intValue);
+    }
+
+    @Override
+    public Mono<BigDecimal> deudaMensualAprobadas(String email) {
+        final String sql = """
+        SELECT COALESCE(SUM(
+            CASE
+              WHEN tp.tasa_interes IS NULL OR tp.tasa_interes = 0
+                THEN s.monto / NULLIF(s.plazo, 0)
+              ELSE s.monto * ( tp.tasa_interes * POWER(1 + tp.tasa_interes, s.plazo) )
+                   / (POWER(1 + tp.tasa_interes, s.plazo) - 1)
+            END
+        ), 0)::numeric(15,2) AS deuda_mensual
+        FROM public.solicitudes s
+        JOIN public.tipo_prestamo tp ON tp.id_tipo_prestamo = s.id_tipo_prestamo
+        JOIN public.estados e       ON e.id_estado       = s.id_estado
+        WHERE e.nombre = 'ACEPTADA' AND s.email = :email
+        """;
+        return db.sql(sql)
+                .bind("email", email)
+                .map((row, md) -> row.get("deuda_mensual", java.math.BigDecimal.class))
+                .one();
+
     }
 
     private static DatabaseClient.GenericExecuteSpec bindPositional(

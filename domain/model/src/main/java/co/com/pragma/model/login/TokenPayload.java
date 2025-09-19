@@ -1,4 +1,4 @@
-package co.com.pragma.model;
+package co.com.pragma.model.login;
 
 import co.com.pragma.model.enums.Roles;
 import lombok.*;

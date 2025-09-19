@@ -13,8 +13,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Repository
 public class TipoReactiveRepositoryAdapter extends ReactiveAdapterOperations<
-        TipoPrestamo/* change for domain model */,
-        TipoPrestamoEntity/* change for adapter model */,
+        TipoPrestamo,
+        TipoPrestamoEntity,
         Long,
         TipoReactiveRepository
 > implements TipoPrestamoRepository {

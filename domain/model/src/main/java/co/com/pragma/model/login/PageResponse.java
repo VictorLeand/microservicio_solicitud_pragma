@@ -1,4 +1,4 @@
-package co.com.pragma.model;
+package co.com.pragma.model.login;
 
 import lombok.*;
 

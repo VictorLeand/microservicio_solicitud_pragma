@@ -1,6 +1,6 @@
 package co.com.pragma.r2dbc.config;
 
-import co.com.pragma.model.TokenPayload;
+import co.com.pragma.model.login.TokenPayload;
 import co.com.pragma.model.exception.BusinessException;
 import co.com.pragma.model.gateway.TokenProvider;
 import org.springframework.http.HttpHeaders;

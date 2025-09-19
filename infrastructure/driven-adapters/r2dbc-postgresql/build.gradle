@@ -10,6 +10,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'io.projectreactor.netty:reactor-netty'
 
+    // AWS SDK v2 (BOM + SQS)
+    implementation platform("software.amazon.awssdk:bom:2.25.0") // usa la última estable
+    implementation "software.amazon.awssdk:sqs"
+    implementation "software.amazon.awssdk:auth"
+    implementation "software.amazon.awssdk:regions"
+
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
 

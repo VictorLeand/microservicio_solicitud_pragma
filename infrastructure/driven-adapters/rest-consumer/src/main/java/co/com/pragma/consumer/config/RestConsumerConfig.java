@@ -2,10 +2,10 @@ package co.com.pragma.consumer.config;
 
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -20,29 +20,28 @@ public class RestConsumerConfig {
     @Value("${adapter.http.timeout:5000}")
     private int timeout;
 
-    @Bean("restConsumerClient")
-    public WebClient restConsumerClient(
-            WebClient.Builder builder,
-            @Value("${adapter.restconsumer.url}") String baseUrl) {
-
-        return builder
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .clientConnector(getClientHttpConnector())   // <- aquí usas tu helper
-                .build();
+    @Bean
+    @Qualifier("restConsumerClient")
+    public WebClient restConsumerClient(WebClient.Builder builder,
+                                        ExchangeFilterFunction bearerPropagator,
+                                        @Value("${adapter.userpaginable.url}") String baseUrl) {
+        return builder.baseUrl(baseUrl).filter(bearerPropagator).build();
     }
 
-    @Bean("usuariosWebClient")
-    public WebClient usuariosWebClient(
-            WebClient.Builder builder,
-            @Value("${adapter.userpaginable.url}") String baseUrl,
-            ExchangeFilterFunction bearerPropagator) {
 
+
+    @Bean
+    @Qualifier("usuariosWebClient")
+    public WebClient usuariosWebClient(WebClient.Builder builder,
+                                       ExchangeFilterFunction bearerPropagator,
+                                       @Value("${adapter.restconsumer.url}") String baseUrl,
+                                       @Value("${adapter.http.timeout}") long timeoutMs) {
         return builder
                 .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .clientConnector(getClientHttpConnector()) // tu helper con timeouts
-                .filter(bearerPropagator)                  // <- se aplica aquí
+                .filter(bearerPropagator) // ← propaga Authorization desde el SecurityContext
+                .clientConnector(new ReactorClientHttpConnector(
+                        HttpClient.create().responseTimeout(java.time.Duration.ofMillis(timeoutMs))
+                ))
                 .build();
     }
 

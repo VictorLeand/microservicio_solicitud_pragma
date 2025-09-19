@@ -24,6 +24,9 @@ public class SecurityConfig {
                         // negocio:
                         .pathMatchers(HttpMethod.POST, "/api/v1/solicitud/**").hasAuthority("ROLE_CLIENTE")
                         .pathMatchers(HttpMethod.GET,  "/api/v1/solicitud/admin").hasAnyAuthority("ROLE_ADMIN","ROLE_ASESOR")
+                        .pathMatchers(HttpMethod.PUT, "/api/v1/solicitud/**").hasAnyAuthority("ROLE_ASESOR","ROLE_ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/calcular-capacidad/**").hasAuthority("ROLE_ASESOR")
+                        .pathMatchers("/internal/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .build();
