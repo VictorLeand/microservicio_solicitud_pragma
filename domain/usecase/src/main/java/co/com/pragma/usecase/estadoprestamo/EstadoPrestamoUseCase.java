@@ -16,7 +16,7 @@ public class EstadoPrestamoUseCase {
     }
 
     public Mono<EstadoPrestamo> saveEstado(EstadoPrestamo estadoPrestamo) {
-        return Mono.just(estadoPrestamo)
+        return Mono.justOrEmpty(estadoPrestamo)
                 .flatMap(estadoPrestamoRepository::save);
     }
 

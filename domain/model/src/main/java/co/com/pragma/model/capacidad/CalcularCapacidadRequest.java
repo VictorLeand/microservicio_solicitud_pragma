@@ -14,4 +14,6 @@ public class CalcularCapacidadRequest {
     BigDecimal monto;
     Integer plazo;
     BigDecimal tasaInteres;
+    BigDecimal deudaMensualActual;
+    BigDecimal ingresosTotales;
 }

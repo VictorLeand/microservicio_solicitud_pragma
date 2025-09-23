@@ -3,6 +3,7 @@ package co.com.pragma.api.capacidad;
 import co.com.pragma.model.capacidad.CalcularCapacidadDecision;
 import co.com.pragma.model.estadoprestamo.gateways.EstadoPrestamoRepository;
 import co.com.pragma.model.exception.BusinessException;
+import co.com.pragma.model.gateway.NotificacionPublisher;
 import co.com.pragma.model.solicitud.gateways.SolicitudRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ public class CapacidadInternaHandler {
 
     private final SolicitudRepository solicitudRepository;
     private final EstadoPrestamoRepository estadoRepo;
+    private final NotificacionPublisher notificacionPublisher;
 
     // GET /internal/solicitudes/deuda-mensual?email=...
     public Mono<ServerResponse> deudaMensual(ServerRequest req) {
@@ -31,23 +33,5 @@ public class CapacidadInternaHandler {
                 .defaultIfEmpty(BigDecimal.ZERO)
                 .flatMap(total -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(java.util.Map.of("email", email, "deudaMensual", total)));
-    }
-
-    // POST /internal/solicitudes/{id}/decision
-    public Mono<ServerResponse> callback(ServerRequest req) {
-        Long idSolicitud = Long.valueOf(req.pathVariable("id"));
-        return req.bodyToMono(CalcularCapacidadDecision.class)
-                .flatMap(dec -> {
-                    String estado = switch (dec.getDecision()) {
-                        case "APROBADO" -> "ACEPTADA";
-                        case "RECHAZADO" -> "RECHAZADA";
-                        case "REVISION MANUAL" -> "REVISIÓN MANUAL";
-                        default -> "REVISIÓN MANUAL";
-                    };
-                    return estadoRepo.findIdByNombre(estado)
-                            .flatMap(idEstado -> solicitudRepository.updateEstadoById(idSolicitud, idEstado))
-                            .then(ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                                    .bodyValue(java.util.Map.of("ok", true)));
-                });
     }
 }

@@ -14,7 +14,7 @@ public class TipoPrestamoUseCase {
 
 
     public Mono<TipoPrestamo> saveTipo(TipoPrestamo tipoPrestamo) {
-        return Mono.just(tipoPrestamo)
+        return Mono.justOrEmpty(tipoPrestamo)
                 .flatMap(tipoPrestamoRepository::save);
     }
 

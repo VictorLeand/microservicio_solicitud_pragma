@@ -47,7 +47,7 @@ public class SolicitudUseCase {
                 );
     }
 
-    public Flux<Admin> getSolictudesAndUsuarios(){
+    public Flux<Admin> getSolictudesAndUsuarios() {
         List<String> estados = List.of("PENDIENTE DE REVISIÓN", "RECHAZADA", "REVISIÓN MANUAL", "ACEPTADA");
         return solicitudRepository.getAdminsByEstadoNombreIn(estados);
     }
@@ -74,12 +74,20 @@ public class SolicitudUseCase {
     }
 
     public Mono<Solicitud> ejecutar(Long idSolicitud, String nuevoEstadoNombre) {
-        if (idSolicitud == null) return Mono.error(new BusinessException("Id de solicitud es requerido"));
-        if (!"ACEPTADA".equalsIgnoreCase(nuevoEstadoNombre) && !"RECHAZADA".equalsIgnoreCase(nuevoEstadoNombre)) {
-            return Mono.error(new BusinessException("Estado inválido. Use ACEPTADA o RECHAZADA"));
+        if (idSolicitud == null) {
+            return Mono.error(new BusinessException("Id de solicitud es requerido"));
         }
 
+        // Normaliza primero
+        if (nuevoEstadoNombre == null) {
+            return Mono.error(new BusinessException("Estado inválido. Use ACEPTADA o RECHAZADA"));
+        }
         final String estadoNormalizado = nuevoEstadoNombre.trim().toUpperCase();
+
+        // Valida ya normalizado
+        if (!"ACEPTADA".equals(estadoNormalizado) && !"RECHAZADA".equals(estadoNormalizado)) {
+            return Mono.error(new BusinessException("Estado inválido. Use ACEPTADA o RECHAZADA"));
+        }
 
         return solicitudRepository.findById(idSolicitud)
                 .switchIfEmpty(Mono.error(new BusinessException("Solicitud no encontrada")))
@@ -88,12 +96,14 @@ public class SolicitudUseCase {
                                 .switchIfEmpty(Mono.error(new BusinessException("Estado no configurado: " + estadoNormalizado)))
                                 .flatMap(idEstado -> solicitudRepository.updateEstadoById(idSolicitud, idEstado)
                                         .flatMap(rows -> {
-                                            if (rows == 0) return Mono.error(new BusinessException("No se pudo actualizar el estado"));
+                                            if (rows == 0) {
+                                                return Mono.error(new BusinessException("No se pudo actualizar el estado"));
+                                            }
 
                                             NotificacionMensaje msg = NotificacionMensaje.builder()
                                                     .email(sol.getEmail())
                                                     .estado(estadoNormalizado)
-                                                    .asunto("Notificación de estado de prestamo") // opcional
+                                                    .asunto("Notificación de estado de prestamo")
                                                     .build();
 
                                             return notificacionPublisher.publicar(msg)
@@ -105,8 +115,8 @@ public class SolicitudUseCase {
                                         })
                                 )
                 );
-        }
     }
+}
 
 
 

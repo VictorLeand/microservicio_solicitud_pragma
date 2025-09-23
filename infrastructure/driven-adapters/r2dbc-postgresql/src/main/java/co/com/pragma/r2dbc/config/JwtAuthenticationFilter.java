@@ -28,29 +28,41 @@ public class JwtAuthenticationFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        String path = exchange.getRequest().getPath().toString();
+
+        // BYPASS rutas públicas
+        if (path.startsWith("/api/v1/calcular-capacidad")
+                || path.startsWith("/internal")
+                || path.startsWith("/actuator")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")) {
+            return chain.filter(exchange);
+        }
+
         String auth = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (auth != null && auth.startsWith("Bearer ")) {
             String token = auth.substring(7);
             try {
                 TokenPayload payload = tokenProvider.verify(token);
-                String roleName = payload.getRole().name(); // ADMIN | ASESOR | CLIENTE
-                if (roleName.startsWith("ROLE_")) roleName = roleName.substring(5);
+                String roleName = payload.getRole().name();
+                if (!roleName.startsWith("ROLE_")) roleName = "ROLE_" + roleName;
 
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        payload.getSubject(), token, List.of(new SimpleGrantedAuthority("ROLE_" + roleName)));
+                        payload.getSubject(), token, List.of(new SimpleGrantedAuthority(roleName)));
 
-                // Log útil
                 System.out.println("[Solicitudes][JWT] subject=" + payload.getSubject()
                         + " authorities=" + authentication.getAuthorities()
-                        + " path=" + exchange.getRequest().getMethod() + " " + exchange.getRequest().getPath());
+                        + " path=" + exchange.getRequest().getMethod() + " " + path);
 
                 return chain.filter(exchange)
                         .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
-            } catch (BusinessException e) {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                return exchange.getResponse().setComplete();
+            } catch (BusinessException ignore) {
+                // token inválido → NO cortar. Dejar pasar.
+                return chain.filter(exchange);
             }
         }
+
+        // sin token → dejar pasar y que las reglas decidan
         return chain.filter(exchange);
     }
 }

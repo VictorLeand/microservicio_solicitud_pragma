@@ -7,6 +7,8 @@ import co.com.pragma.model.solicitud.gateways.SolicitudRepository;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+
 @RequiredArgsConstructor
 public class CalcularCapacidadUseCase {
 
@@ -16,19 +18,21 @@ public class CalcularCapacidadUseCase {
     public Mono<Void> solicitarValidacion(Long solicitudId) {
         return solicitudRepository.findById(solicitudId)
                 .switchIfEmpty(Mono.error(new BusinessException("Solicitud no existe")))
-                .flatMap(sol -> {
-                    if (sol.getIdTipoPrestamo() == null) {
-                        return Mono.error(new BusinessException("Solicitud sin tipo de préstamo"));
-                    }
-                    // Construye el request para la Lambda
-                    var req = CalcularCapacidadRequest.builder()
-                            .idSolicitud(sol.getId())
-                            .email(sol.getEmail())
-                            .monto(sol.getMonto())
-                            .plazo(sol.getPlazo())
-                            .tasaInteres(null)
-                            .build();
-                    return capacidadPublisher.publicar(req);
-                });
+                .flatMap(sol ->
+                        solicitudRepository.deudaMensualAprobadas(sol.getEmail())
+                                .defaultIfEmpty(BigDecimal.ZERO)
+                                .flatMap(deuda -> {
+                                    var req = CalcularCapacidadRequest.builder()
+                                            .idSolicitud(sol.getId())
+                                            .email(sol.getEmail())
+                                            .monto(sol.getMonto())
+                                            .plazo(sol.getPlazo())
+                                            .tasaInteres(null)
+                                            .deudaMensualActual(deuda)
+                                            .ingresosTotales(null) // ponlo si lo manejas
+                                            .build();
+                                    return capacidadPublisher.publicar(req);
+                                })
+                );
+        }
     }
-}

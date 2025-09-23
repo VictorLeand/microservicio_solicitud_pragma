@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -22,17 +25,22 @@ public class SqsCapacidadPublisher implements CapacidadPublisher {
     @Value("${SQS_CAPACIDAD_URL}")
     private String queueUrl;
 
-    @Override
     public Mono<Void> publicar(CalcularCapacidadRequest request) {
         return Mono.fromCallable(() -> mapper.writeValueAsString(request))
                 .flatMap(body -> Mono.fromFuture(
                         sqs.sendMessage(SendMessageRequest.builder()
                                 .queueUrl(queueUrl)
                                 .messageBody(body)
+                                .messageAttributes(Map.of(
+                                        "idSolicitud", MessageAttributeValue.builder()
+                                                .dataType("Number").stringValue(String.valueOf(request.getIdSolicitud())).build(),
+                                        "email", MessageAttributeValue.builder()
+                                                .dataType("String").stringValue(request.getEmail()).build()
+                                ))
                                 .build())
                 ))
-                .doOnSuccess(resp -> log.info("[Capacidad] Encolado id={} messageId={}",
-                        request.getIdSolicitud(), resp.messageId()))
+                .doOnSuccess(r -> log.info("[Capacidad] Encolado id={} msgId={}",
+                        request.getIdSolicitud(), r.messageId()))
                 .then();
     }
 }

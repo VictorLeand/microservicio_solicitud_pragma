@@ -66,3 +66,6 @@ adapter:
     url: ${USUARIOS_URL:http://usuarios:8081}
     uri:
       paginable: "/api/v1/solicitud"
+logging:
+  level:
+    org.springframework.security: DEBUG
